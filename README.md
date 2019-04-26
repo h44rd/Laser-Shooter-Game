@@ -18,3 +18,10 @@ Additional Controls / Features:
 7. Cannon takes one second to reload.
 8. No penalty is given if a green brick falls in red bucket or vice versa.
 9. Game ends once a black brick falls into a bucket.
+
+After installing the dependencies, run using:
+```
+make
+
+./sample2D
+```

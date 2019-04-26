@@ -62,6 +62,7 @@ Graphobj bMirrors[3];
 map <int, Graphobj> bricks;
 map <int, Graphobj> laser;
 double last_update_time2,current_time2;
+double main_frame_current_time, main_frame_last_update;
 float laserSpeed;
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
@@ -680,8 +681,17 @@ void addBrick(int brkno,float brkpos)
      totBricks++;
 }
 
+double zoom_pan_speed = 0.1;
+double cannon_speed = 0.1;
+double angle_speed = 0.1;
+double brick_speed = 0.1;
+double buck_speed = 0.1;
+
+
 void draw (GLFWwindow* window)
 {
+    double dt = main_frame_current_time - main_frame_last_update;
+    cout<<dt<<" "<<main_frame_current_time<<" "<<main_frame_last_update<<endl;
       // clear the color and depth in the frame buffer
       glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -714,112 +724,112 @@ void draw (GLFWwindow* window)
       {
           if(lasercanon.y < 4)
           {
-              lasercanon.y += (0.05);
+              lasercanon.y += cannon_speed*dt;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_F)==GLFW_PRESS)
       {
           if(lasercanon.y > -4)
           {
-              lasercanon.y -= (0.05);
+              lasercanon.y -= cannon_speed*dt;
           }
       }
       if(glfwGetKey(window,GLFW_KEY_RIGHT_CONTROL)==GLFW_PRESS)
       {
           if(redbuck.x < 4.9)
           {
-              redbuck.x += (0.05);
+              redbuck.x += buck_speed*dt;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL)==GLFW_PRESS)
       {
           if(redbuck.x> -4)
           {
-              redbuck.x -= (0.05);
+              redbuck.x -= buck_speed*dt;
           }
       }
       if(glfwGetKey(window,GLFW_KEY_RIGHT_ALT)==GLFW_PRESS)
       {
           if(greenbuck.x < 4.9)
           {
-              greenbuck.x += (0.05);
+              greenbuck.x += buck_speed*dt;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_LEFT_ALT)==GLFW_PRESS)
       {
           if(greenbuck.x > -4)
           {
-              greenbuck.x -= (0.05);
+              greenbuck.x -= buck_speed*dt;
           }
       }
       if(glfwGetKey(window,GLFW_KEY_M)==GLFW_PRESS)
       {
           if(brkrate < 0.1)
           {
-              brkrate += (0.001);
+              brkrate += (0.001)*dt;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_N)==GLFW_PRESS)
       {
           if(brkrate-0.02 > 0.005)
           {
-              brkrate -= (0.001);
+              brkrate -= (0.001)*dt;
           }
       }
       if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS && togMouse==1)
       {
           if(lasercanon.newAngle < 1.57079)
           {
-              lasercanon.newAngle += 0.01;
+              lasercanon.newAngle += angle_speed*dt;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS && togMouse==1)
       {
           if(lasercanon.newAngle > -1.57079)
           {
-              lasercanon.newAngle -= (0.01);
+              lasercanon.newAngle -= angle_speed*dt;
           }
       }
       if(glfwGetKey(window,GLFW_KEY_DOWN)==GLFW_PRESS)
       {
           if(zoom < 1)
           {
-              zoom += 0.01;
+              zoom += zoom_pan_speed*dt;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_UP)==GLFW_PRESS)
       {
           if(zoom-0.01 > 0)
           {
-              zoom -= (0.01);
+              zoom -= zoom_pan_speed*dt;
           }
       }
       if(glfwGetKey(window,GLFW_KEY_RIGHT)==GLFW_PRESS)
       {
           if(panx < 4)
           {
-              panx += 0.1;
+              panx += zoom_pan_speed*dt;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_LEFT)==GLFW_PRESS)
       {
           if(panx-0.01 > -4)
           {
-              panx -= (0.1);
+              panx -= zoom_pan_speed*dt;
           }
       }
       if(glfwGetKey(window,GLFW_KEY_V)==GLFW_PRESS)
       {
-          if(laserSpeed < 0.3)
+          if(laserSpeed < 15)
           {
-              laserSpeed += 0.01;
+              laserSpeed += 0.005;
           }
       }
       else if(glfwGetKey(window,GLFW_KEY_C)==GLFW_PRESS)
       {
-          if(laserSpeed > 0.05)
+          if(laserSpeed > 1)
           {
-              laserSpeed -= (0.01);
+              laserSpeed -= (0.005);
           }
       }
       glfwGetWindowSize(window,&winWidth, &winHieght);
@@ -898,7 +908,7 @@ void draw (GLFWwindow* window)
           {
               Matrices.model = glm::mat4(1.0f);
               glm::mat4 translateLaser = glm::translate (glm::vec3(it->second.x,it->second.y, 0));
-              it->second.x+=it->second.speed*cos(it->second.angle);        // glTranslatef
+              it->second.x+=it->second.speed*dt*cos(it->second.angle);        // glTranslatef
               it->second.y=it->second.slope*(it->second.x-it->second.startX)+it->second.startY;
               glm::mat4 rotateLaser = glm::rotate((float)(it->second.angle), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
               Matrices.model *= (translateLaser * rotateLaser);
@@ -970,7 +980,7 @@ void draw (GLFWwindow* window)
     for(map<int,Graphobj>::iterator it=bricks.begin();it!=bricks.end();)
     {
         Matrices.model = glm::mat4(1.0f);
-        if(it->second.y+0.3+it->second.widthy<-3 && it->second.x>=(greenbuck.x-0.3) && it->second.x<=(greenbuck.x+0.3-it->second.lengthx))
+        if(it->second.y+0.3 + it->second.widthy < -3 && it->second.x >= (greenbuck.x-0.3) && it->second.x <= (greenbuck.x+0.3-it->second.lengthx))
         {
             if(it->second.brktype==1)
             {
@@ -1010,7 +1020,7 @@ void draw (GLFWwindow* window)
         if(it->second.y>-4.5 && it->second.status==1)
         {
             glm::mat4 translatebrk = glm::translate (glm::vec3(it->second.x,it->second.y, 0));        // glTranslatef
-            it->second.y= (it->second.y)-brkrate;
+            it->second.y= (it->second.y)-brkrate*dt;
             //cout<<it->second.y<<" "<<it->second.x<<endl;
             //rotateRectangle = glm::rotate((float)(0*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
             Matrices.model *= (translatebrk);
@@ -1037,11 +1047,11 @@ void draw (GLFWwindow* window)
 
 /**********************************************************************************************************************/
   // Increment angles
-  float increments = 1;
+  float increments = 0.1;
 
   //camera_rotation_angle++; // Simulating camera rotation
-  triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
-  rectangle_rotation = rectangle_rotation + laserSpeed*10*rectangle_rot_status;
+  triangle_rotation = triangle_rotation + increments*dt*triangle_rot_dir*triangle_rot_status;
+  rectangle_rotation = rectangle_rotation + laserSpeed*dt*10*rectangle_rot_status;
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -1153,19 +1163,22 @@ int main (int argc, char** argv)
     GLFWwindow* window = initGLFW(width, height);
     totBricks=0;
     totLasers=0;
-    laserSpeed=0.1;
-    brkrate=0.01;
+    laserSpeed=15;
+    brkrate=0.1;
     fallrate=2;
     onlyOnce=0;
 	initGL (window, width, height);
 
     double last_update_time = glfwGetTime(), current_time;
     last_update_time2 = glfwGetTime();
+    main_frame_last_update = glfwGetTime();
     int brkno;
     float brkpos;
+    main_frame_current_time = glfwGetTime();
+    main_frame_last_update = main_frame_current_time;
     /* Draw in loop */
     while (!glfwWindowShouldClose(window)) {
-
+        main_frame_current_time = glfwGetTime();
         // OpenGL Draw commands
         draw(window);
 
@@ -1187,6 +1200,8 @@ int main (int argc, char** argv)
             }
             last_update_time = current_time;
         }
+        main_frame_last_update = main_frame_current_time;
+
     }
 
     glfwTerminate();
